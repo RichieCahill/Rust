@@ -1,0 +1,4 @@
+can intrisic with cffi
+https://liufuyang.github.io/2020/02/02/call-c-in-rust.html
+
+https://rust-lang.github.io/rfcs/2873-inline-asm.html
