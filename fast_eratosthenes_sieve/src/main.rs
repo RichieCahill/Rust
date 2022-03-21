@@ -1,17 +1,26 @@
 use num::integer::sqrt;
+use std::arch::asm;
 
-// use std::arch::x86_64::*;
+// _mm_popcnt_u64 For rust
+#[inline]
+fn _popcntu64(mut x: u64) -> u64{
+	unsafe {
+	    asm!(
+	        "popcnt {x}, {x}",
+					x = inout(reg) x,
+	    );
+			return x;
+	}
+}
 
 // counts the number prime numbers in the array minus the bits that are
-fn count(_prime: &Vec<u64>, _size: usize, _extra: u32) -> u32{
+fn count(_prime: &Vec<u64>, _size: usize, mut _extra: usize) -> u64{
 	let mut temp = 0;
 		for i in 0.._size {
-				temp += _prime[i].count_zeros();
+				temp += 64-_popcntu64(_prime[i]);
 		}
-		// return temp - (extra-_mm_popcnt_u64(prime[size-1]>>(64-extra)));
-
-		return temp	- (_extra-(_prime[_size-1]>>(64-_extra)).count_ones())
-		;
+				let _extra: u64 = _extra.try_into().unwrap();
+				return temp -(_extra-_popcntu64(_prime[_size-1]>>(64-_extra)));
 }
 	
 // fn eratosthenes_sieve(_n: usize, _prime: Vec<u64>, _size: usize) -> (){
@@ -23,18 +32,13 @@ fn eratosthenes_sieve(_n: usize,_prime: &mut Vec<u64>) -> (){
 			}
 		}
 	}
-
-	
-	for x in _prime {
-    println!("{:#02x}", x);
-	}
 }
 
 
 
 fn main() {
 	// The number you want to calculate to
-	const TOTAL: usize = 1024;
+	const TOTAL: usize = 1000;
 	// calculates next multipule of 128 above Total
 	const MULT: usize =128-(TOTAL%128)+TOTAL;
 	// calculates the difference  between total nad Mult
@@ -42,15 +46,10 @@ fn main() {
 	// create and list of 64bit ints 128 time smaller then Mult
 	const SIZE: usize  = MULT/128;
 	let mut _prime: Vec<u64> = vec![0; SIZE];
+
 	// eratosthenes_sieve(MULT,_prime,SIZE);
 	eratosthenes_sieve(MULT,&mut _prime);
 
-
-
-	let test = count(&_prime, SIZE, EXTRA.try_into().unwrap());
-
-	println!("{}", test);
-
-
+	println!("{}", count(&_prime, SIZE, EXTRA.try_into().unwrap()));
 
 }
