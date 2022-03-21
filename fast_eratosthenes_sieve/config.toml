@@ -1,0 +1,4 @@
+[build]
+rustflags = 'target-feature=+avx'      # custom flags to pass to all compiler invocations
+rustflags = "--emit asm"
+RUSTFLAGS="--emit asm"

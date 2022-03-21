@@ -1,5 +1,5 @@
 [package]
-name = "EratosthenesSieve"
+name = "fast_eratosthenes_sieve"
 version = "0.1.0"
 edition = "2021"
 
