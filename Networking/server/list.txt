@@ -1,0 +1,10 @@
+/ZFS/Storage/Plex/TV/Show/Season_10/EP1.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP1.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP2.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP3.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP4.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP5.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP6.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP7.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP8.mkv
+/ZFS/Storage/Plex/TV/Show/Season_9/EP9.mkv
