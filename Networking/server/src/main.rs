@@ -6,14 +6,21 @@ use std::{
 	io::{self, Read, Write},
 	net::{TcpListener,TcpStream,Shutdown},
 	path::{PathBuf},
-	str::{FromStr},
-	string::ToString
+	str::{FromStr,from_utf8},
+	string::ToString, process::exit,
 };
 
 fn spawner (ip: &str, list: Vec<String>,mut pos: usize) -> io::Result<()> {
 	let mut stream = TcpStream::connect(ip)?;
-	let hash = calculate_hash(list[pos].clone()).to_string();
+	let mut hash = calculate_hash(list[pos].clone()).to_string();
+	if hash.len() == 19 {
+		hash="0".to_owned()+&hash;
+	}
 	let buf = pos.to_string()+&hash+&list[pos];
+	println!("{}", pos);
+	println!("{}", hash.len());
+	println!("{}", hash);
+	println!("{}", list[pos]);
 	if buf.len() < 150 {
 		stream.write_all(buf.as_bytes())?;
 	} else {
@@ -23,11 +30,10 @@ fn spawner (ip: &str, list: Vec<String>,mut pos: usize) -> io::Result<()> {
 	let mut rx_bytes = [0u8; 1];
 	let _test=stream.read(&mut rx_bytes);
 	let received = std::str::from_utf8(&rx_bytes).expect("valid utf8");
-	println!("test");
 	let num = received.parse::<i32>().unwrap();
-
-	println!("{}", num);
-	
+	if pos == list.len()-1 {
+			exit(0)
+	}
 	if num == 1 {
 		print!("yay");
 		pos+=1;
@@ -69,25 +75,6 @@ fn calculate_hash(string: String) -> u64 {
 	temp.finish()
 }
 
-fn request_handler(mut stream: &TcpStream) -> io::Result<()> {
-	// Array with a fixed size
-let mut rx_bytes = [0u8; 150];
-
-let _test=stream.read(&mut rx_bytes);
-let received = std::str::from_utf8(&rx_bytes).expect("valid utf8");
-println!("{}", received);
-
-// let mut rx_bytes2 = String::new();
-// let _test=stream.read_to_string(&mut rx_bytes);
-// println!("{}", rx_bytes);
-
-let data = b"1";
-stream.write_all(data);
-stream.flush()
-// ffmpeg();
-}
-
-
 fn main() {
 	let mut list: Vec<String> = vec![];
 	let ips = vec!["127.0.0.1:8080"];
@@ -95,16 +82,28 @@ fn main() {
 	let mut pos = 0;
 
 	list = import_list((&FILE_PATH).into());
-	// for ip in &ips {
-		spawner (ips[0],list,pos);
-		// pos+=1;
-	// }
+	for ip in &ips {
+		spawner (ips[0],list.clone(),pos);
+		pos+=1;
+	}
 
 	let listener = TcpListener::bind("127.0.0.1:8081").unwrap();
 	for stream in listener.incoming() {
 		match stream {
-				Ok(stream) => {
-					request_handler(&stream);
+				Ok(mut stream) => {
+					println!("in loop");
+					let mut rx_bytes = [0u8; 1];
+					let _test=stream.read(&mut rx_bytes);
+					let received = from_utf8(&rx_bytes).expect("valid utf8");
+					println!("{}", received);
+					println!("{}", pos);
+					stream.shutdown(Shutdown::Both);
+					if received.parse::<i64>().unwrap() == 1 {
+						spawner (ips[0],list.clone(),pos);
+						pos+=1;
+					}
+								
+										
 				}
 				Err(_e) => { /* connection failed */ }
 		}
