@@ -1,0 +1,6 @@
+https://docs.rs/rustc-std-workspace-std/1.0.1/std/net/struct.TcpStream.html#method.connect
+https://docs.rs/rustc-std-workspace-std/1.0.1/std/net/struct.TcpStream.html#impl-Read
+https://docs.rs/rustc-std-workspace-std/1.0.1/std/net/struct.TcpStream.html
+https://github.com/thepacketgeek/rust-tcpstream-demo/tree/master/raw
+clippy
+rist fmt
