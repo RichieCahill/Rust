@@ -40,8 +40,6 @@ fn ffmpeg (in_file: &str, out_file: &str) -> i32{
 fn ls (in_file: String) -> i32{
 	let test = "/ZFS/Storage/Plex/".to_owned()+&in_file;
 	let status = Command::new("ls")
-	.arg("-l")
-	.arg("-a")
 	.arg(test)
 	.status()
 	.expect("ffmpeg command failed to start");
@@ -62,13 +60,12 @@ fn request_handler(mut stream: &TcpStream) -> (i64, String) {
 	let (pos, temp) = trimmed.split_at(1);
 	let (hast, data) = temp.split_at(20);
 	println!("{}", pos);
-	println!("{}", hast);
 	println!("{}", data);
 
 	
 	if hast.parse::<u64>().unwrap() == calculate_hash(data) {
 		stream.write_all(b"1");
-		(pos.parse::<i64>().unwrap(), data.to_string())
+		(pos.parse::< >().unwrap(), data.to_string())
 	} else {
 		stream.write_all(b"0");
 		(-1, "error".to_string())

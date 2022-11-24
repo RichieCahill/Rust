@@ -3,7 +3,7 @@ use std::{
 	collections::hash_map::{DefaultHasher},
 	fs,
 	hash::{Hash, Hasher},
-	io::{self, Read, Write},
+	io::{Read, Write},
 	net::{TcpListener, TcpStream, Shutdown},
 	str::{FromStr, from_utf8},
 	string::ToString,
@@ -28,7 +28,7 @@ fn error(string: String) {
 Taken for https://doc.rust-lang.org/std/hash/index.html#
 Just hashes a string
 */
-fn calculate_hash(string: String) -> u64 {
+fn calculate_hash(string: &String) -> u64 {
 	let mut temp = DefaultHasher::new();
 	string.hash(&mut temp);
 	temp.finish()
@@ -52,34 +52,35 @@ fn import_list() -> Vec<String> {
 	list
 }
 
-fn spawner (ip: &str, list: Vec<String>,mut pos: usize) -> io::Result<()> {
-	let mut stream = TcpStream::connect(ip)?;
-	let mut hash = calculate_hash(list[pos].clone()).to_string();
+fn spawner (ip: &str, item: &String,mut pos: usize, listlen: usize) -> usize {
+	let mut stream = TcpStream::connect(ip);
+	let mut hash = calculate_hash(&item).to_string();
 	// if hash returns less then 19 this will fail loop mabby
 	if hash.len() == 19 {
 		hash="0".to_owned()+&hash;
 	}
-	let buf = pos.to_string()+&hash+&list[pos];
+	let buf = pos.to_string()+&hash+&item;
 	if buf.len() < 150 {
-		stream.write_all(buf.as_bytes())?;
+		stream.as_mut().expect("REASON").write_all(buf.as_bytes());
 	} else {
 		error("ERROR spawner buffer to long\n".to_owned()+&buf+"\n");
 	}
 
 	let mut rx_bytes = [0u8; 1];
-	let _test=stream.read(&mut rx_bytes);
+		stream.as_mut().expect("REASON").read(&mut rx_bytes);
 	let received = std::str::from_utf8(&rx_bytes).expect("valid utf8");
 	let num = received.parse::<i32>().unwrap();
-	if pos == list.len()-1 {
-			exit(0)
-	}
 	if num == 1 {
-		pos+=1;
-		stream.shutdown(Shutdown::Both)
+		stream.expect("REASON").shutdown(Shutdown::Both);
 	} else {
 		error("Problem sending data to".to_owned()+ip+"\n");
-		stream.shutdown(Shutdown::Both)
+		stream.expect("REASON").shutdown(Shutdown::Both);
 	}
+	if pos >= listlen {
+		exit(0)
+	}
+	pos+=1;
+	return pos
 }
 
 fn main() {
@@ -87,22 +88,22 @@ fn main() {
 	let mut pos = 0;
 
 	let list = import_list();
+	// minus 1 to account for starting of list being 0
+	let listlen = list.len()-1;
 
 	for ip in &ips {
-		spawner (ip,list.clone(),pos);
-		pos+=1;
+		pos = spawner (ip,&list[pos],pos,listlen);
 	}
 	let listener = TcpListener::bind("127.0.0.1:8081").unwrap();
 	for stream in listener.incoming() {
 		match stream {
 				Ok(mut stream) => {
 					let mut rx_bytes = [0u8; 1];
-					let _test=stream.read(&mut rx_bytes);
+					stream.read(&mut rx_bytes);
 					let received = from_utf8(&rx_bytes).expect("valid utf8");
 					stream.shutdown(Shutdown::Both);
 					if received.parse::<i64>().unwrap() == 1 {
-						spawner (ips[0],list.clone(),pos);
-						pos+=1;
+					pos = spawner (ips[0],&list[pos],pos,listlen);
 					}
 				}
 				Err(_e) => { /* connection failed */ }
