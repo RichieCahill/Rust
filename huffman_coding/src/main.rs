@@ -1,4 +1,5 @@
-use std::{cmp::Ordering, collections::HashMap, fs::File, io::Read};
+use bitvec::prelude::BitVec;
+use std::{cmp::Ordering, collections::HashMap, fs::File, io::Read, path::Path};
 
 #[derive(Debug)]
 struct Node {
@@ -53,10 +54,10 @@ impl Ord for Node {
     }
 }
 
-fn build_frequency_table(text: &str) -> HashMap<char, u32> {
+fn build_frequency_table(input_text: &str) -> HashMap<char, u32> {
     let mut frequency_table: HashMap<char, u32> = HashMap::new();
-    for c in text.chars() {
-        *frequency_table.entry(c).or_insert(0) += 1;
+    for input_char in input_text.chars() {
+        *frequency_table.entry(input_char).or_insert(0) += 1;
     }
     frequency_table
 }
@@ -70,8 +71,8 @@ fn build_huffman_tree(frequency_table: &HashMap<char, u32>) -> Option<Box<Node>>
     while nodes.len() > 1 {
         nodes.sort();
 
-        let left: Box<Node> = nodes.pop()?;
-        let right: Box<Node> = nodes.pop()?;
+        let left: Box<Node> = nodes.remove(0);
+        let right: Box<Node> = nodes.remove(0);
 
         let parent: Node = Node::new(
             None,
@@ -85,20 +86,86 @@ fn build_huffman_tree(frequency_table: &HashMap<char, u32>) -> Option<Box<Node>>
     nodes.pop()
 }
 
-fn open_file(path: &str) -> String {
+fn open_file<P: AsRef<Path>>(path: P) -> String {
     let mut file: File = File::open(path).expect("Failed to open file");
     let mut text: String = String::new();
     file.read_to_string(&mut text).expect("Failed to read file");
     text
 }
 
+fn huffman_tree_to_dict_helper(node: &Node, code: BitVec, dict: &mut HashMap<char, BitVec>) {
+    if let Some(character) = node.character {
+        dict.insert(character, code);
+    } else {
+        if let Some(left) = &node.left {
+            let mut left_code = code.clone();
+            left_code.push(false);
+            huffman_tree_to_dict_helper(left, left_code, dict);
+        }
+        if let Some(right) = &node.right {
+            let mut right_code = code.clone();
+            right_code.push(true);
+            huffman_tree_to_dict_helper(right, right_code, dict);
+        }
+    }
+}
+
+fn huffman_tree_to_dict(huffman_tree: &Option<Box<Node>>) -> HashMap<char, BitVec> {
+    let mut dict: HashMap<char, BitVec> = HashMap::new();
+    if let Some(tree) = huffman_tree {
+        huffman_tree_to_dict_helper(tree, BitVec::new(), &mut dict);
+    }
+    dict
+}
+
+fn encode_text(input_text: &str, huffman_dict: &HashMap<char, BitVec>) -> BitVec {
+    let mut encoded_text = BitVec::new();
+    for input_char in input_text.chars() {
+        if let Some(code) = huffman_dict.get(&input_char) {
+            encoded_text.extend(code);
+        }
+    }
+    encoded_text
+}
+
+fn decode_text(encoded_text: &BitVec, huffman_dict: HashMap<char, BitVec>) -> String {
+    let mut huffman_dict_reversed: HashMap<BitVec, char> = HashMap::new();
+    for (character, code) in huffman_dict {
+        huffman_dict_reversed.insert(code, character);
+    }
+
+    let mut decoded_text = String::new();
+    let mut current_code = BitVec::new();
+
+    for bit in encoded_text {
+        current_code.push(*bit);
+
+        if let Some(character) = huffman_dict_reversed.get(&current_code) {
+            decoded_text.push(*character);
+            current_code.clear();
+        }
+    }
+
+    decoded_text
+}
+
 fn main() {
-    let text: String = open_file("./test.txt");
+    let input_text: String = open_file("./test.txt");
+    let frequency_table = build_frequency_table(&input_text);
+    let huffman_tree = build_huffman_tree(&frequency_table);
 
-    let frequency_table: HashMap<char, u32> = build_frequency_table(&text);
-    let huffman_tree: Option<Box<Node>> = build_huffman_tree(&frequency_table);
+    let huffman_dict = huffman_tree_to_dict(&huffman_tree);
 
-    println!("{:?}", huffman_tree);
+    let encoded_text = encode_text(&input_text, &huffman_dict);
+
+    let decoded_text = decode_text(&encoded_text, huffman_dict);
+    println!("{}", decoded_text);
+
+    if decoded_text == input_text {
+        println!("Success!");
+    } else {
+        println!("Failure!");
+    }
 }
 
 #[cfg(test)]
