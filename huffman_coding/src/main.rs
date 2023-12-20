@@ -36,6 +36,7 @@ impl Node {
 
 impl Eq for Node {}
 
+// 41-42
 impl PartialEq for Node {
     fn eq(&self, other: &Self) -> bool {
         self.frequency == other.frequency
@@ -48,6 +49,7 @@ impl PartialOrd for Node {
     }
 }
 
+// 53-54
 impl Ord for Node {
     fn cmp(&self, other: &Self) -> Ordering {
         self.frequency.cmp(&other.frequency)
@@ -86,6 +88,7 @@ fn build_huffman_tree(frequency_table: &HashMap<char, u32>) -> Option<Box<Node>>
     nodes.pop()
 }
 
+// 90-94
 fn open_file<P: AsRef<Path>>(path: P) -> String {
     let mut file: File = File::open(path).expect("Failed to open file");
     let mut text: String = String::new();
@@ -149,6 +152,7 @@ fn decode_text(encoded_text: &BitVec, huffman_dict: HashMap<char, BitVec>) -> St
     decoded_text
 }
 
+// 156-159, 161, 163, 165-166, 168-169, 171 I dont like this behavior of tarpaulin
 fn main() {
     let input_text: String = open_file("./test.txt");
     let frequency_table = build_frequency_table(&input_text);
@@ -204,5 +208,17 @@ mod tests {
         let huffman_tree = build_huffman_tree(&frequency_table);
 
         assert_eq!(huffman_tree.is_some(), true);
+    }
+
+    #[test]
+    fn test_encode_decode_text() {
+        let input_text = "hello world";
+        let frequency_table = build_frequency_table(input_text);
+        let huffman_tree = build_huffman_tree(&frequency_table);
+        let huffman_dict = huffman_tree_to_dict(&huffman_tree);
+        let encoded_text = encode_text(input_text, &huffman_dict);
+        let decoded_text = decode_text(&encoded_text, huffman_dict);
+
+        assert_eq!(decoded_text, input_text);
     }
 }
